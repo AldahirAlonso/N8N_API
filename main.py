@@ -1,4 +1,5 @@
 from fastapi import FastAPI
+from pydantic import BaseModel
 app = FastAPI(title="N8N_Python")
 
 class IncomingData(BaseModel):
