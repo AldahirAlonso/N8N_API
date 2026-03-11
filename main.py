@@ -8,7 +8,10 @@ class IncomingData(BaseModel):
 
 @app.post("/analyze")
 def analyze(data: IncomingData):
-    return {"received_text": data.text, "length": len(data.text)}
+    text = data.text.strip()
+    words = [word for word in text.split() ]
+    word_count = len(words)
+    return {"received_text": data.text, "length": len(data.text), "words": words, "words_count": word_count}
 
 @app.get("/")
 def health_check():
