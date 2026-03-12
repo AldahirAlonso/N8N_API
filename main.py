@@ -1,17 +1,52 @@
 from fastapi import FastAPI
 from pydantic import BaseModel
+import re
+from typing import List
+from collections import Counter
+
 app = FastAPI(title="N8N_Python")
 
 class IncomingData(BaseModel):
     text: str
     source: str | None = None
 
+SPANISH_STOPWORDS = {
+    "de", "la", "que", "el", "en", "y", "a", "los", "del", "se", "las",
+    "por", "un", "para", "con", "no", "una", "su", "al", "lo", "como",
+    "más", "mas", "o", "pero", "sus", "le", "ya", "si", "porque", "cuando",
+    "muy", "sin", "sobre", "también", "tambien", "me", "hasta", "hay",
+    "donde", "han", "quien", "entre", "está", "esta", "ser", "son",
+}
+
+def tokenize(text: str) -> List[str]:
+    text = text.lower()
+    return re.findall(r"[a-záéíóúüñ]+", text, flags=re.IGNORECASE)
+
 @app.post("/analyze")
 def analyze(data: IncomingData):
     text = data.text.strip()
-    words = [word for word in text.split() ]
-    word_count = len(words)
-    return {"received_text": data.text, "length": len(data.text), "words": words, "words_count": word_count}
+    tokens = tokenize(text)
+    word_count = len(tokens)
+
+    filtered_words = [
+        token for token in tokens if token not in SPANISH_STOPWORDS]
+
+    counter = Counter(filtered_words)
+    unique_word_count = len(counter)
+
+    top_words = [
+        {"word": word, "count": count} for word, count in counter.most_common(5)
+    ]
+
+    # words = [word for word in text.split() ]
+    return {
+            "received_text": data.text,
+            "char_count": len(data.text),
+            "source": data.source,
+            "unique_word_count": unique_word_count,
+            "words_count": word_count,
+            "top_words": top_words
+            }
 
 @app.get("/")
 def health_check():
